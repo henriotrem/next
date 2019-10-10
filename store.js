@@ -1,16 +1,16 @@
-var next = require("./next.js");
+var universe = require("./universe");
+var spatiality = require("./dimensions/spatiality");
+var temporality = require("./dimensions/temporality");
 var uuid = require('uuid/v4');
-
-var universe = next.universe;
 
 universe.dimensions = {};
 
-universe.dimensions.space = next.spatiality;
+universe.dimensions.space = spatiality;
 universe.dimensions.space.origin = [47.864716, 2.349014];
 universe.dimensions.space.limit = { distance : null, direction : null };
 universe.dimensions.space.storage = new Map();
 
-//universe.dimensions.time = omega.temporality;
+//universe.dimensions.time = temporality;
 
 universe.init({port: 6379,host: '127.0.0.1'},'index:action|space:#',9, 10);
 
