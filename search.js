@@ -1,20 +1,18 @@
-var universe = require("./universe");
-var spatiality = require("./dimensions/spatiality");
-var temporality = require("./dimensions/temporality");
+const Redis = require("redis");
+const redis = Redis.createClient({port: 6379,host: '127.0.0.1'});
 
-universe.dimensions = {};
+redis.on("error", function (err) {
+    console.log("Error " + err);
+});
 
-universe.dimensions.space = spatiality;
-universe.dimensions.space.origin = [47.864716, 2.349014];
-universe.dimensions.space.limit = { distance : null, direction : null };
-universe.dimensions.space.storage = new Map();
+var spatiality = require("./app/dimensions/spatiality");
+var temporality = require("./app/dimensions/temporality");
 
-/*
-universe.dimensions.time = universe.temporality;
-universe.dimensions.time.origin = 1562066591;
-universe.dimensions.time.limit = { distance : null, direction : null };
-universe.dimensions.time.storage = new Map();
-*/
+var universe = require("./app/universe");
 
-universe.init({port: 6379,host: '127.0.0.1'},'index:action|space:#',9, 10);
+spatiality.init([47.864716, 2.349014], { distance : null, direction : null }, 3);
+temporality.init(1562066591, { distance : null, direction : null }, 1);
+
+universe.init(redis, null,{space: spatiality,time: temporality},'index:action|space:#',9, 10);
+
 universe.load();

@@ -1,5 +1,28 @@
 var constant = require("../constant");
 
+this.referentials = [];
+this.init = function (origin, limit, base) {
+
+    this.origin = origin;
+    this.limit = limit;
+    this.referentials = [];
+    this.base(base);
+};
+this.change = function (index) {
+
+    this.referential = this.referentials[index-1];
+};
+this.base = function (index) {
+
+    this.referentials[index-1] = {};
+
+    this.referentials[index-1].root = constant.root;
+    this.referentials[index-1].index = index;
+    this.referentials[index-1].base = constant.base[index-1];
+    this.referentials[index-1].storage = new Map();
+
+    this.change(index);
+};
 this.locate = function (absolue) {
 
     var dist;
@@ -35,7 +58,7 @@ this.filter = function (distance, direction) {
 };
 this.decode = function (hash) {
 
-    if (hash === constant.root)
+    if (hash === this.referential.root)
         return [-Infinity, Infinity];
 
     var values = hash.split('_');
@@ -51,7 +74,7 @@ this.decode = function (hash) {
 
         var idx = constant.base4.indexOf(timehash[i]);
 
-        for (var n = 1; n >= 0; n--) {
+        for (var n = this.referential.index; n >= 0; n--) {
 
             var bitN = idx >> n & 1;
 
@@ -69,7 +92,7 @@ this.decode = function (hash) {
 this.encode = function (position, precision) {
 
     if (precision === 0)
-        return constant.root;
+        return this.referential.root;
 
     var realTimestamp = position - (946684800);
 
@@ -94,9 +117,9 @@ this.encode = function (position, precision) {
             timeMax = timeMid;
         }
 
-        if (++bit === 2) {
+        if (++bit === (this.referential.index + 1)) {
 
-            hash += constant.base4[idx];
+            hash += this.referential.base[idx];
             bit = 0;
             idx = 0;
         }

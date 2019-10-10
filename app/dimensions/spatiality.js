@@ -1,5 +1,29 @@
 var constant = require("../constant");
 
+this.referentials;
+
+this.init = function (origin, limit, base) {
+
+    this.origin = origin;
+    this.limit = limit;
+    this.referentials = [];
+    this.base(base);
+};
+this.change = function (index) {
+
+    this.referential = this.referentials[index-1];
+};
+this.base = function (index) {
+
+    this.referentials[index-1] = {};
+
+    this.referentials[index-1].root = constant.root;
+    this.referentials[index-1].index = index;
+    this.referentials[index-1].base = constant.base[index-1];
+    this.referentials[index-1].storage = new Map();
+
+    this.change(index);
+};
 this.distance = function (destination) {
 
     var lat1 = Math.PI * this.origin[0] / 180;
@@ -119,7 +143,7 @@ this.filter = function (distance, direction) {
 };
 this.decode = function (hash) {
 
-    if (hash === constant.root)
+    if (hash === this.referential.root)
         return [-90, -180, 90, 180];
 
     var evenBit = true;
@@ -127,9 +151,9 @@ this.decode = function (hash) {
 
     for (var i = 0; i < hash.length; i++) {
 
-        var idx = constant.base16.indexOf(hash[i]);
+        var idx = this.referential.base.indexOf(hash[i]);
 
-        for (var n = 3; n >= 0; n--) {
+        for (var n = this.referential.index; n >= 0; n--) {
 
             var bitN = idx >> n & 1;
 
@@ -160,7 +184,7 @@ this.decode = function (hash) {
 this.encode = function (position, precision) {
 
     if (precision === 0)
-        return constant.root;
+        return this.referential.root;
 
     var lat = position[0];
     var lon = position[1];
@@ -200,9 +224,9 @@ this.encode = function (position, precision) {
 
         evenBit = !evenBit;
 
-        if (++bit === 4) {
+        if (++bit === (this.referential.index + 1)) {
 
-            geohash += constant.base16[idx];
+            geohash += this.referential.base[idx];
             bit = 0;
             idx = 0;
         }

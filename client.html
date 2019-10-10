@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        #map {
+            height: 800px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id = "sse">
+        <a href = "javascript:connect()">Connect</a>
+        <a href = "javascript:more()">More</a>
+    </div>
+    <script>
+        var map;
+        var ws;
+
+        function initMap() {
+
+            map = new google.maps.Map(
+                document.getElementById('map'), {zoom: 3, center: {lat: 0, lng: 0}});
+
+            let marker = new google.maps.Marker({
+                map: map,
+                position: {lat: 47.864716, lng: 2.349014},
+                icon: {
+                    url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                }
+            });
+
+        }
+
+        function connect() {
+
+            if ("WebSocket" in window) {
+
+                console.log("WebSocket is supported by your Browser!");
+
+                // Let us open a web socket
+                ws = new WebSocket("ws://localhost:5050/echo");
+
+                ws.onopen = function() {
+
+                    console.log("Connection is opened...");
+
+                    ws.send('load');
+                };
+
+                ws.onmessage = function (evt) {
+
+                    var object = JSON.parse(evt.data);
+
+                    console.log(object);
+
+                    var position = new google.maps.LatLng(parseFloat(object.latitude), parseFloat(object.longitude));
+                    var marker = new google.maps.Marker({position: position, map: map, title: object.key});
+                };
+
+                ws.onclose = function() {
+
+                    // websocket is closed.
+                    console.log("Connection is closed...");
+                };
+            } else {
+
+                // The browser doesn't support WebSocket
+                console.log("WebSocket NOT supported by your Browser!");
+            }
+        }
+
+        function more() {
+
+            ws.send('more');
+        }
+    </script>
+    <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC65CuZhnT6-EUQqnod-JK4SpMvZYg4_g8&callback=initMap">
+    </script>
+</body>
+</html>

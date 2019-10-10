@@ -1,11 +1,14 @@
 var constant = require("./constant");
-var redis = require("redis");
 
-this.init = function (connection, key, depth, step) {
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-    this.client = redis.createClient(connection);
-    this.client.on("error", function (err) {console.log("Error " + err);});
+this.init = function (redis, ws, dimensions, key, depth, step) {
 
+    this.redis = redis;
+    this.ws = ws;
+    this.dimensions = dimensions;
     this.depth = depth;
     this.limit = step;
     this.step = step;
@@ -67,7 +70,7 @@ this.index = function (data, depth) {
                 selected = dimension.filter(index.distance, index.direction);
             }
 
-            dimension.storage.set(key, index);
+            dimension.referential.storage.set(key, index);
 
             element.index.push(index);
         }
@@ -88,7 +91,7 @@ this.index = function (data, depth) {
 };
 this.more = function () {
 
-    this.level = 1;
+    this.level = this.depth;
     this.limit += this.step;
 
     this.next();
@@ -97,7 +100,10 @@ this.next = function () {
 
     if (this.level === 0) {
 
-        this.client.quit();
+        console.log('Finished')
+
+        if(this.ws == null)
+            this.redis.quit();
 
     } else if (this.layers[this.depth].loaded.count < this.limit) {
 
@@ -115,7 +121,13 @@ this.next = function () {
         }
     } else {
 
-        this.more();
+        console.log('Next')
+
+        //if(this.ws == null)
+        sleep(30).then(() => {
+            this.more();
+        });
+
     }
 };
 this.select = function () {
@@ -146,10 +158,6 @@ this.load = function () {
 
         var element = layer.selected.list[i];
 
-        if (element.distance > 0) {
-            layer.radius = element.distance;
-        }
-
         if (this.level > 0) {
             layer.loaded.count += element.count;
             layer.selected.count -= element.count;
@@ -161,7 +169,7 @@ this.load = function () {
 
         if(this.level < this.depth - 1) {
 
-            this.client.zrevrangebyscore([element.key, '+inf', '-inf', 'WITHSCORES'], function (err, response) {
+            this.redis.zrevrangebyscore([element.key, '+inf', '-inf', 'WITHSCORES'], function (err, response) {
 
                 var count = 0;
 
@@ -185,7 +193,7 @@ this.load = function () {
 
         } else if(this.level === this.depth - 1) {
 
-            this.client.smembers([element.key], function (err, response) {
+            this.redis.smembers([element.key], function (err, response) {
 
                 var count = 0;
 
@@ -209,11 +217,15 @@ this.load = function () {
 
         } else if(this.level === this.depth) {
 
-            this.client.hgetall([element.key.split('|')[0]], function (err, response) {
+            this.redis.hgetall([element.key.split('|')[0]], function (err, response) {
 
-                response.distance = this.element.distance;
+                response.distance = Math.sqrt(this.element.distance);
 
-                console.log(response);
+                if(this.universe.ws !== null) {
+                    this.universe.ws.send(JSON.stringify(response));
+                } else {
+                    console.log(response);
+                }
 
                 layer.loaded.list.push(this.element);
 
@@ -229,6 +241,11 @@ this.load = function () {
     }
 
     layer.selected.list.splice(0, target);
+
+    if (this.level > 0) {
+
+        layer.radius = (layer.selected.list.length > 0) ? layer.selected.list[0].distance : this.layers[this.level - 1].radius;
+    }
 };
 this.sort = function (a, b) {
 

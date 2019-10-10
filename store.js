@@ -1,24 +1,27 @@
-var universe = require("./universe");
-var spatiality = require("./dimensions/spatiality");
-var temporality = require("./dimensions/temporality");
+const Redis = require("redis");
+const redis = Redis.createClient({port: 6379,host: '127.0.0.1'});
+
+redis.on("error", function (err) {
+  console.log("Error " + err);
+});
+
 var uuid = require('uuid/v4');
 
-universe.dimensions = {};
+var spatiality = require("./app/dimensions/spatiality");
+var temporality = require("./app/dimensions/temporality");
 
-universe.dimensions.space = spatiality;
-universe.dimensions.space.origin = [47.864716, 2.349014];
-universe.dimensions.space.limit = { distance : null, direction : null };
-universe.dimensions.space.storage = new Map();
+var universe = require("./app/universe");
 
-//universe.dimensions.time = temporality;
+spatiality.init([47.864716, 2.349014], { distance : null, direction : null }, 3);
+temporality.init(1562066591, { distance : null, direction : null }, 1);
 
-universe.init({port: 6379,host: '127.0.0.1'},'index:action|space:#',9, 10);
+universe.init(redis, null,{space: spatiality,time: temporality},'index:action|space:#',9, 10);
 
-universe.client.flushdb( function (err, succeeded) { console.log(succeeded); });
+universe.redis.flushdb( function (err, succeeded) { console.log(succeeded); });
 
 var precision = 13;
 
-for(var i = 0; i < 100; i++) {
+for(var i = 0; i < 100000; i++) {
 
   var action = {};
 
@@ -27,7 +30,7 @@ for(var i = 0; i < 100; i++) {
   action.time = 1562066591;
   action.key = "action:"+uuid();
 
-  universe.client.hmset(action.key, action);
+  universe.redis.hmset(action.key, action);
 
   var geohash = universe.dimensions.space.encode([action.latitude, action.longitude], precision);
 
@@ -40,11 +43,11 @@ for(var i = 0; i < 100; i++) {
     parent = universe.parent(parent);
 
     if(j === universe.depth) {
-      universe.client.sadd(parent, value);
+      universe.redis.sadd(parent, value);
     } else if(j < universe.depth) {
-      universe.client.zincrby(parent, 1, child);
+      universe.redis.zincrby(parent, 1, child);
     }
   }
 }
 
-universe.client.quit();
+universe.redis.quit();
