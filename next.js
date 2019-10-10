@@ -1,5 +1,6 @@
 var redis = require("redis");
 
+var root = "#";
 var base4 = "ABCD";
 var base8 = "ABCDEFGH";
 var base16 = "ABCDEFGHIJKLMNOP";
@@ -45,7 +46,7 @@ this.temporality.filter = function (distance, direction) {
 };
 this.temporality.decode = function (hash) {
 
-    if (hash === "ALL")
+    if (hash === root)
         return [-Infinity, Infinity];
 
     var values = hash.split('_');
@@ -79,7 +80,7 @@ this.temporality.decode = function (hash) {
 this.temporality.encode = function (position, precision) {
 
     if (precision === 0)
-        return "ALL";
+        return root;
 
     var realTimestamp = position - (946684800);
 
@@ -238,20 +239,15 @@ this.spatiality.filter = function (distance, direction) {
 };
 this.spatiality.decode = function (hash) {
 
-    if (hash === "EARTH")
+    if (hash === root)
         return [-90, -180, 90, 180];
-
-    var values = hash.split('_');
-
-    var year = values[0];
-    var geohash = values[1];
 
     var evenBit = true;
     var latMin = -90, latMax = 90, lonMin = -180, lonMax = 180;
 
-    for (var i = 0; i < geohash.length; i++) {
+    for (var i = 0; i < hash.length; i++) {
 
-        var idx = base16.indexOf(geohash[i]);
+        var idx = base16.indexOf(hash[i]);
 
         for (var n = 3; n >= 0; n--) {
 
@@ -284,7 +280,7 @@ this.spatiality.decode = function (hash) {
 this.spatiality.encode = function (position, precision) {
 
     if (precision === 0)
-        return "EARTH";
+        return root;
 
     var lat = position[0];
     var lon = position[1];
@@ -332,14 +328,14 @@ this.spatiality.encode = function (position, precision) {
         }
     }
 
-    return "EARTH_" + geohash;
+    return geohash;
 };
 
 /////////////////////////////////////////
 
-this.search = {};
+this.universe = {};
 
-this.search.init = function (connection, key, depth, step) {
+this.universe.init = function (connection, key, depth, step) {
 
     this.client = redis.createClient(connection);
     this.client.on("error", function (err) {console.log("Error " + err);});
@@ -367,7 +363,7 @@ this.search.init = function (connection, key, depth, step) {
     this.layers[this.level].selected.list.push(this.layers[this.level].indexed.list[0]);
     this.layers[this.level].indexed.list.splice(0, 1);
 };
-this.search.index = function (data, depth) {
+this.universe.index = function (data, depth) {
 
     var selected = true;
     var element = {};
@@ -424,14 +420,14 @@ this.search.index = function (data, depth) {
 
     return element;
 };
-this.search.more = function () {
+this.universe.more = function () {
 
     this.level = 1;
     this.limit += this.step;
 
     this.next();
 };
-this.search.next = function () {
+this.universe.next = function () {
 
     if (this.level === 0) {
 
@@ -456,7 +452,7 @@ this.search.next = function () {
         this.more();
     }
 };
-this.search.select = function () {
+this.universe.select = function () {
 
     var layer = this.layers[this.level];
     var radiusMax = this.layers[this.level - 1].radius;
@@ -472,7 +468,7 @@ this.search.select = function () {
 
     layer.indexed.list.splice(0, i);
 };
-this.search.load = function () {
+this.universe.load = function () {
 
     var layer = this.layers[this.level];
     var target = -1;
@@ -504,22 +500,22 @@ this.search.load = function () {
                 var count = 0;
 
                 for (var j = 0; j < response.length / 2; j++)
-                    count += this.search.index([response[j * 2], response[j * 2 + 1]], (this.search.level + 1)).count;
+                    count += this.universe.index([response[j * 2], response[j * 2 + 1]], (this.universe.level + 1)).count;
 
                 if (this.element.count !== count)
                     this.element.count = count;
 
                 layer.loaded.list.push(this.element);
 
-                if (++current === this.target || !this.search.level) {
+                if (++current === this.target || !this.universe.level) {
 
-                    this.search.level++;
-                    this.search.layers[this.search.level].indexed.list.sort(this.search.sort);
+                    this.universe.level++;
+                    this.universe.layers[this.universe.level].indexed.list.sort(this.universe.sort);
 
-                    this.search.next();
+                    this.universe.next();
                 }
 
-            }.bind({search: this, element: element, target: target}));
+            }.bind({universe: this, element: element, target: target}));
 
         } else if(this.level === this.depth - 1) {
 
@@ -528,7 +524,7 @@ this.search.load = function () {
                 var count = 0;
 
                 for (var j = 0; j < response.length; j++)
-                    count += this.search.index([response[j],'1'], (this.search.level + 1)).count;
+                    count += this.universe.index([response[j],'1'], (this.universe.level + 1)).count;
 
                 if (this.element.count !== count)
                     this.element.count = count;
@@ -537,13 +533,13 @@ this.search.load = function () {
 
                 if (++current === this.target) {
 
-                    this.search.level++;
-                    this.search.layers[this.search.level].indexed.list.sort(this.search.sort);
+                    this.universe.level++;
+                    this.universe.layers[this.universe.level].indexed.list.sort(this.universe.sort);
 
-                    this.search.next();
+                    this.universe.next();
                 }
 
-            }.bind({search: this, element: element, target: target}));
+            }.bind({universe: this, element: element, target: target}));
 
         } else if(this.level === this.depth) {
 
@@ -557,51 +553,53 @@ this.search.load = function () {
 
                 if (++current === this.target) {
 
-                    this.search.level++;
-                    this.search.next();
+                    this.universe.level++;
+                    this.universe.next();
                 }
 
-            }.bind({search: this, element: element, target: target}));
+            }.bind({universe: this, element: element, target: target}));
 
         }
     }
 
     layer.selected.list.splice(0, target);
 };
-this.search.sort = function (a, b) {
+this.universe.sort = function (a, b) {
 
     return a.distance - b.distance;
 };
-this.search.parent = function (key, depth) {
-
-    if (depth === 0)
-        return null;
+this.universe.parent = function (key) {
 
     var parts = key.split('|');
     var parentKey = "";
 
     for (var i in parts) {
 
-        var tmp = parts[i].split(':');
-
-        var dimension = this.dimensions[tmp[0]];
-        var subkey = tmp[1];
-
-        if (dimension !== undefined) {
-
-            if (depth === 1) {
-
-                subkey = dimension.encode("", 0);
-            } else {
-
-                subkey = subkey.slice(0, -1);
-            }
-        }
-
         if (i > 0)
             parentKey += '|';
 
-        parentKey += tmp[0] + ':' + subkey;
+        var tmp = parts[i].split(':');
+
+        if (this.dimensions[tmp[0]] !== undefined) {
+
+            var subkey;
+
+            if (tmp[1] === root) {
+
+                return null;
+            } else if (tmp[1].length === 1) {
+
+                subkey = root;
+            } else {
+
+                subkey = tmp[1].slice(0, -1);
+            }
+
+            parentKey += tmp[0] + ':' + subkey;
+        } else {
+
+            parentKey += parts[i];
+        }
     }
 
     return parentKey;
