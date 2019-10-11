@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Next</title>
+    <style>
+        #map {
+            height: 800px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id = "sse">
+        <a href = "javascript:connect()">Connect</a>
+        <a href = "javascript:init()">Init</a>
+        <a href = "javascript:start()">Start</a>
+        <a href = "javascript:more()">More</a>
+        <a href = "javascript:flush()">Flush</a>
+        <a href = "javascript:randomize()">Randomize</a>
+    </div>
+    <script>
+        var map;
+        var ws;
+
+        function initMap() {
+
+            map = new google.maps.Map(
+                document.getElementById('map'),
+                {
+                    zoom: 3,
+                    center: {lat: 0, lng: 0},
+                    styles: [
+                        {elementType: 'geometry', stylers: [{color: '#242f3e'}]},
+                        {elementType: 'labels.text.stroke', stylers: [{color: '#242f3e'}]},
+                        {elementType: 'labels.text.fill', stylers: [{color: '#746855'}]},
+                        {
+                            featureType: 'administrative.locality',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#d59563'}]
+                        },
+                        {
+                            featureType: 'poi',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#d59563'}]
+                        },
+                        {
+                            featureType: 'poi.park',
+                            elementType: 'geometry',
+                            stylers: [{color: '#263c3f'}]
+                        },
+                        {
+                            featureType: 'poi.park',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#6b9a76'}]
+                        },
+                        {
+                            featureType: 'road',
+                            elementType: 'geometry',
+                            stylers: [{color: '#38414e'}]
+                        },
+                        {
+                            featureType: 'road',
+                            elementType: 'geometry.stroke',
+                            stylers: [{color: '#212a37'}]
+                        },
+                        {
+                            featureType: 'road',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#9ca5b3'}]
+                        },
+                        {
+                            featureType: 'road.highway',
+                            elementType: 'geometry',
+                            stylers: [{color: '#746855'}]
+                        },
+                        {
+                            featureType: 'road.highway',
+                            elementType: 'geometry.stroke',
+                            stylers: [{color: '#1f2835'}]
+                        },
+                        {
+                            featureType: 'road.highway',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#f3d19c'}]
+                        },
+                        {
+                            featureType: 'transit',
+                            elementType: 'geometry',
+                            stylers: [{color: '#2f3948'}]
+                        },
+                        {
+                            featureType: 'transit.station',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#d59563'}]
+                        },
+                        {
+                            featureType: 'water',
+                            elementType: 'geometry',
+                            stylers: [{color: '#17263c'}]
+                        },
+                        {
+                            featureType: 'water',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#515c6d'}]
+                        },
+                        {
+                            featureType: 'water',
+                            elementType: 'labels.text.stroke',
+                            stylers: [{color: '#17263c'}]
+                        }
+                    ]
+                });
+
+        }
+
+        function connect() {
+
+            if ("WebSocket" in window) {
+
+                console.log("WebSocket is supported by your Browser!");
+
+                ws = new WebSocket("ws://localhost:5050/echo");
+
+                ws.onopen = function() {
+
+                    console.log("Connection is opened...");
+                };
+
+                ws.onmessage = function (evt) {
+
+                    var object = JSON.parse(evt.data);
+
+                    console.log(object);
+
+                    let position = new google.maps.LatLng(parseFloat(object.latitude), parseFloat(object.longitude));
+                    let marker = new google.maps.Marker({
+                        position: position,
+                        map: map,
+                        title: object.key,
+                        icon: {
+                            url: "red_dot.png"
+                        }
+                    });
+                };
+
+                ws.onclose = function() {
+
+                    console.log("Connection is closed...");
+                };
+            } else {
+
+                console.log("WebSocket NOT supported by your Browser!");
+            }
+        }
+
+        function init() {
+
+            let marker = new google.maps.Marker({
+                map: map,
+                position: {lat: 47.864716, lng: 2.349014},
+                icon: {
+                    url: "blue_dot.png"
+                }
+            });
+
+            ws.send('init');
+        }
+
+        function start() {
+
+            ws.send('start');
+        }
+
+        function more() {
+
+            ws.send('more');
+        }
+
+        function flush() {
+
+            ws.send('flush');
+        }
+
+        function randomize() {
+
+            ws.send('randomize');
+        }
+
+    </script>
+    <script async defer
+            src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC65CuZhnT6-EUQqnod-JK4SpMvZYg4_g8&callback=initMap">
+    </script>
+</body>
+</html>

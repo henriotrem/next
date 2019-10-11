@@ -1,15 +1,17 @@
 var constant = require("./constant");
+var uuid = require('uuid/v4');
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-this.init = function (redis, ws, dimensions, key, depth, step) {
+this.init = function (redis, ws, dimensions, depth, precision, step) {
 
     this.redis = redis;
     this.ws = ws;
     this.dimensions = dimensions;
     this.depth = depth;
+    this.precision = precision;
     this.limit = step;
     this.step = step;
     this.level = 0;
@@ -26,11 +28,15 @@ this.init = function (redis, ws, dimensions, key, depth, step) {
         this.layers[i].selected = {list: [], count: 0};
         this.layers[i].loaded = {list: [], count: 0};
     }
+};
+this.start = function (root) {
 
-    this.index([key, '0'], 0);
+    this.index([root, '0'], 0);
 
     this.layers[this.level].selected.list.push(this.layers[this.level].indexed.list[0]);
     this.layers[this.level].indexed.list.splice(0, 1);
+
+    this.load();
 };
 this.index = function (data, depth) {
 
@@ -123,10 +129,8 @@ this.next = function () {
 
         console.log('Next')
 
-        //if(this.ws == null)
-        sleep(30).then(() => {
-            this.more();
-        });
+        if(this.ws == null)
+            sleep(30).then(() => {this.more();});
 
     }
 };
@@ -286,4 +290,43 @@ this.parent = function (key) {
     }
 
     return parentKey;
+};
+this.insert = function (object) {
+
+    this.redis.hmset(object.key, object);
+
+    var geohash = this.dimensions.space.encode([object.latitude, object.longitude], this.precision);
+
+    var parent = "index:action|space:" + geohash;
+    var value = object.key + "|space:" + geohash;
+
+    for(var j = this.precision; j > 0;  j--) {
+
+        var child = parent;
+        parent = this.parent(parent);
+
+        if(j === this.depth) {
+            this.redis.sadd(parent, value);
+        } else if(j < this.depth) {
+            this.redis.zincrby(parent, 1, child);
+        }
+    }
+};
+this.flush = function () {
+
+    this.redis.flushdb(function (err, succeeded) { console.log(succeeded); });
+};
+this.randomize = function (limit) {
+
+    for(var i = 0; i < limit; i++) {
+
+        var action = {};
+
+        action.latitude = (Math.random()-0.5)*180;
+        action.longitude = (Math.random()-0.5)*360;
+        action.time = 1562066591;
+        action.key = "action:"+uuid();
+
+        this.insert(action);
+    }
 };
