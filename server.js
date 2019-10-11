@@ -13,16 +13,19 @@ redis.on("error", function (err) {
     console.log("Error " + err);
 });
 
+//[175, -175]
+//[0, 120]
+
 wss.on('connection', function connection(ws) {
 
     ws.on('message', function incoming(message) {
 
         if(message === 'init') {
 
-            spatiality.init([49.864716, 4.349014], { distance : null, direction : [0, 120] }, 3);
+            spatiality.init([49.864716, 4.349014], { distance : 10000, direction : [160, -160] }, 3);
             temporality.init(1562066591, { distance : null, direction : null }, 1);
 
-            universe.init(redis, ws, {space: spatiality,time: temporality}, 9, 13, 10, false);
+            universe.init(redis, ws, {space: spatiality,time: temporality}, 9, 13, 10, true);
         }
         if(message === 'start') {
 

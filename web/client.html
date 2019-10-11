@@ -128,17 +128,24 @@
                     console.log("Connection is opened...");
                 };
 
+
+                /*
+                let infowindow = new google.maps.InfoWindow({
+                    content: data.body.key,
+                    position: new google.maps.LatLng((data.body.index[0].bounds[0] + data.body.index[0].bounds[2]) / 2, (data.body.index[0].bounds[1] + data.body.index[0].bounds[3]) / 2),
+                    maxWidth: 100
+                });
+
+                infowindow.open(map)
+                */
+
                 ws.onmessage = function (evt) {
 
                     var data = JSON.parse(evt.data);
 
-                    console.log(data.body);
-
                     if(data.type === 'removed') {
 
-                        console.log(data.body);
-
-                        let rectangle = new google.maps.Rectangle({
+                        new google.maps.Rectangle({
                             strokeColor: '#000000',
                             strokeOpacity: 0.8,
                             strokeWeight: 2,
@@ -152,22 +159,11 @@
                                 west: data.body.index[0].bounds[1]
                             }
                         });
-
-                        let infowindow = new google.maps.InfoWindow({
-                            content: data.body.key,
-                            position: new google.maps.LatLng((data.body.index[0].bounds[0] + data.body.index[0].bounds[2]) / 2, (data.body.index[0].bounds[1] + data.body.index[0].bounds[3]) / 2),
-                            maxWidth: 100
-                        });
-
-                        infowindow.open(map)
-
                     }
 
-                    if(data.type === 'loaded2') {
+                    if(data.type === 'indexed' && 0) {
 
-                        console.log(data.body);
-
-                        let rectangle = new google.maps.Rectangle({
+                        new google.maps.Rectangle({
                             strokeColor: '#FF0000',
                             strokeOpacity: 0.8,
                             strokeWeight: 2,
@@ -181,10 +177,11 @@
                                 west: data.body.index[0].bounds[1]
                             }
                         });
-
                     }
 
                     if(data.type === 'object') {
+
+                        console.log(data.body);
 
                         var object = data.body;
 
@@ -214,7 +211,7 @@
 
             let marker = new google.maps.Marker({
                 map: map,
-                position: {lat: 47.864716, lng: 2.349014},
+                position: {lat: 49.864716, lng: 4.349014},
                 icon: {
                     url: "blue_dot.png"
                 }

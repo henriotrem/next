@@ -139,7 +139,7 @@ this.next = function () {
 
         if(this.full && this.step > 0) {
 
-            sleep(500).then(() => {
+            sleep(50).then(() => {
                 this.more();
             });
         }

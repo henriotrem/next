@@ -53,7 +53,7 @@ this.direction = function (destination) {
 };
 this.locate = function (absolue) {
 
-    var data;
+    var data = "";
 
     var destination = [];
     var border1 = [];
@@ -62,63 +62,61 @@ this.locate = function (absolue) {
     if (this.origin[0] < absolue[0]) {
 
         destination[0] = absolue[0];
-        data = 10
+        data += "N"
     } else if (this.origin[0] > absolue[2]) {
 
         destination[0] = absolue[2];
-        data = 20
+        data += "S"
     } else {
 
         destination[0] = this.origin[0];
-        data = 0
     }
 
     if (this.origin[1] < absolue[1]) {
 
         destination[1] = absolue[1];
-        data += 1
+        data += "E"
     } else if (this.origin[1] > absolue[3]) {
 
         destination[1] = absolue[3];
-        data += 2
+        data += "W"
     } else {
 
         destination[1] = this.origin[1];
-        data += 0
     }
 
-    if (data === 1) {
-
-        border1 = [absolue[2], absolue[1]];
-        border2 = [absolue[0], absolue[1]];
-    } else if (data === 2) {
-
-        border1 = [absolue[0], absolue[3]];
-        border2 = [absolue[2], absolue[3]];
-    } else if (data === 10) {
+    if (data === "N") {
 
         border1 = [absolue[0], absolue[1]];
         border2 = [absolue[0], absolue[3]];
-    } else if (data === 20) {
-
-        border1 = [absolue[2], absolue[3]];
-        border2 = [absolue[2], absolue[1]];
-    } else if (data === 11) {
+    } else if (data === "NE") {
 
         border1 = [absolue[2], absolue[1]];
         border2 = [absolue[0], absolue[3]];
-    } else if (data === 22) {
+    } else if (data === "E") {
 
-        border1 = [absolue[0], absolue[3]];
-        border2 = [absolue[2], absolue[1]];
-    } else if (data === 12) {
-
-        border1 = [absolue[0], absolue[1]];
-        border2 = [absolue[2], absolue[3]];
-    } else if (data === 21) {
+        border1 = [absolue[2], absolue[1]];
+        border2 = [absolue[0], absolue[1]];
+    } else if (data === "SE") {
 
         border1 = [absolue[2], absolue[3]];
         border2 = [absolue[0], absolue[1]];
+    } else if (data === "S") {
+
+        border1 = [absolue[2], absolue[3]];
+        border2 = [absolue[2], absolue[1]];
+    } else if (data === "SW") {
+
+        border1 = [absolue[0], absolue[3]];
+        border2 = [absolue[2], absolue[1]];
+    } else if (data === "W")  {
+
+        border1 = [absolue[0], absolue[3]];
+        border2 = [absolue[2], absolue[3]];
+    } else if (data === "NW")  {
+
+        border1 = [absolue[0], absolue[1]];
+        border2 = [absolue[2], absolue[3]];
     } else {
 
         return [0, null]
@@ -136,8 +134,33 @@ this.filter = function (distance, direction) {
     if (this.limit.distance !== null && distance > this.limit.distance)
         result = false;
 
-    if (this.limit.direction !== null && direction !== null && (direction[1] < this.limit.direction[0] || direction[0] > this.limit.direction[1]))
-        result = false;
+    if (this.limit.direction !== null && direction !== null) {
+
+        var limit = (this.limit.direction[0] < this.limit.direction[1]);
+        var area = (direction[0] < direction[1]);
+        var tmp1 = (direction[1] < this.limit.direction[0]);
+        var tmp2 = (direction[0] > this.limit.direction[1]);
+
+        if(limit) {
+
+            if (area && (tmp1 || tmp2)) {
+
+                result = false;
+            } else if (!area && (tmp1 && tmp2)) {
+
+                result = false;
+            }
+        } else {
+
+            if (!area && (!tmp1 && !tmp2)) {
+
+                result = false;
+            } else if (area && (tmp1 && tmp2)) {
+
+                result = false;
+            }
+        }
+    }
 
     return result;
 };
