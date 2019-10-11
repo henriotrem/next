@@ -19,10 +19,10 @@ wss.on('connection', function connection(ws) {
 
         if(message === 'init') {
 
-            spatiality.init([47.864716, 2.349014], { distance : null, direction : null }, 3);
+            spatiality.init([49.864716, 4.349014], { distance : null, direction : [0, 120] }, 3);
             temporality.init(1562066591, { distance : null, direction : null }, 1);
 
-            universe.init(redis, ws, {space: spatiality,time: temporality}, 9, 13, 10);
+            universe.init(redis, ws, {space: spatiality,time: temporality}, 9, 13, 10, false);
         }
         if(message === 'start') {
 
@@ -38,7 +38,7 @@ wss.on('connection', function connection(ws) {
         }
         if(message === 'randomize') {
 
-            universe.randomize(1000);
+            universe.randomize(10000);
         }
     });
 });

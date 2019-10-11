@@ -121,7 +121,7 @@ this.locate = function (absolue) {
         border2 = [absolue[0], absolue[1]];
     } else {
 
-        return [0, null, null]
+        return [0, null]
     }
 
     var direction = [this.direction(border1), this.direction(border2)];

@@ -130,19 +130,74 @@
 
                 ws.onmessage = function (evt) {
 
-                    var object = JSON.parse(evt.data);
+                    var data = JSON.parse(evt.data);
 
-                    console.log(object);
+                    console.log(data.body);
 
-                    let position = new google.maps.LatLng(parseFloat(object.latitude), parseFloat(object.longitude));
-                    let marker = new google.maps.Marker({
-                        position: position,
-                        map: map,
-                        title: object.key,
-                        icon: {
-                            url: "red_dot.png"
-                        }
-                    });
+                    if(data.type === 'removed') {
+
+                        console.log(data.body);
+
+                        let rectangle = new google.maps.Rectangle({
+                            strokeColor: '#000000',
+                            strokeOpacity: 0.8,
+                            strokeWeight: 2,
+                            fillColor: '#000000',
+                            fillOpacity: 0.1,
+                            map: map,
+                            bounds: {
+                                north: data.body.index[0].bounds[0],
+                                south: data.body.index[0].bounds[2],
+                                east: data.body.index[0].bounds[3],
+                                west: data.body.index[0].bounds[1]
+                            }
+                        });
+
+                        let infowindow = new google.maps.InfoWindow({
+                            content: data.body.key,
+                            position: new google.maps.LatLng((data.body.index[0].bounds[0] + data.body.index[0].bounds[2]) / 2, (data.body.index[0].bounds[1] + data.body.index[0].bounds[3]) / 2),
+                            maxWidth: 100
+                        });
+
+                        infowindow.open(map)
+
+                    }
+
+                    if(data.type === 'loaded2') {
+
+                        console.log(data.body);
+
+                        let rectangle = new google.maps.Rectangle({
+                            strokeColor: '#FF0000',
+                            strokeOpacity: 0.8,
+                            strokeWeight: 2,
+                            fillColor: '#FF0000',
+                            fillOpacity: 0.1,
+                            map: map,
+                            bounds: {
+                                north: data.body.index[0].bounds[0],
+                                south: data.body.index[0].bounds[2],
+                                east: data.body.index[0].bounds[3],
+                                west: data.body.index[0].bounds[1]
+                            }
+                        });
+
+                    }
+
+                    if(data.type === 'object') {
+
+                        var object = data.body;
+
+                        let position = new google.maps.LatLng(parseFloat(object.latitude), parseFloat(object.longitude));
+                        let marker = new google.maps.Marker({
+                            position: position,
+                            map: map,
+                            title: object.key,
+                            icon: {
+                                url: "red_dot.png"
+                            }
+                        });
+                    }
                 };
 
                 ws.onclose = function() {

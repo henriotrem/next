@@ -5,7 +5,7 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-this.init = function (redis, ws, dimensions, depth, precision, step) {
+this.init = function (redis, ws, dimensions, depth, precision, step, full) {
 
     this.redis = redis;
     this.ws = ws;
@@ -14,6 +14,7 @@ this.init = function (redis, ws, dimensions, depth, precision, step) {
     this.precision = precision;
     this.limit = step;
     this.step = step;
+    this.full = full;
     this.level = 0;
     this.storage = new Map();
 
@@ -63,8 +64,9 @@ this.index = function (data, depth) {
             var index = {};
 
             index.key = key;
+            index.bounds = dimension.decode(key);
 
-            var result = dimension.locate(dimension.decode(key));
+            var result = dimension.locate(index.bounds);
 
             index.distance = result[0];
             index.direction = result[1];
@@ -88,9 +90,14 @@ this.index = function (data, depth) {
 
         this.layers[depth].indexed.list.push(element);
         this.layers[depth].indexed.count += element.count;
+
+        this.ws.send(JSON.stringify({type: 'indexed', body: element}));
     } else {
 
         this.layers[depth].removed.list.push(element);
+        this.layers[depth].removed.count += element.count;
+
+        this.ws.send(JSON.stringify({type: 'removed', body: element}));
     }
 
     return element;
@@ -106,10 +113,13 @@ this.next = function () {
 
     if (this.level === 0) {
 
-        console.log('Finished')
+        if(this.layers[this.depth].loaded.count !== this.limit) {
 
-        if(this.ws == null)
-            this.redis.quit();
+            this.limit -= this.step;
+            this.step--;
+
+            this.more();
+        }
 
     } else if (this.layers[this.depth].loaded.count < this.limit) {
 
@@ -127,11 +137,14 @@ this.next = function () {
         }
     } else {
 
-        console.log('Next')
+        if(this.full && this.step > 0) {
 
-        if(this.ws == null)
-            sleep(30).then(() => {this.more();});
+            sleep(500).then(() => {
+                this.more();
+            });
+        }
 
+        console.log('Loaded : ' + this.layers[this.depth].loaded.count);
     }
 };
 this.select = function () {
@@ -225,13 +238,9 @@ this.load = function () {
 
                 response.distance = Math.sqrt(this.element.distance);
 
-                if(this.universe.ws !== null) {
-                    this.universe.ws.send(JSON.stringify(response));
-                } else {
-                    console.log(response);
-                }
-
                 layer.loaded.list.push(this.element);
+
+                this.universe.ws.send(JSON.stringify({type: 'object', body: response}));
 
                 if (++current === this.target) {
 
@@ -249,6 +258,17 @@ this.load = function () {
     if (this.level > 0) {
 
         layer.radius = (layer.selected.list.length > 0) ? layer.selected.list[0].distance : this.layers[this.level - 1].radius;
+
+        var removed = this.layers[this.level - 1].loaded.count - (layer.indexed.count + layer.selected.count + layer.loaded.count);
+
+        if(removed > 0){
+
+            for(var level = this.level - 1; level > 0; level--) {
+
+                this.layers[level].loaded.count -= removed;
+                this.layers[level].removed.count += removed;
+            }
+        }
     }
 };
 this.sort = function (a, b) {
