@@ -58,6 +58,7 @@ this.locate = function (absolue) {
     var destination = [];
     var border1 = [];
     var border2 = [];
+    var border3 = [];
 
     if (this.origin[0] < absolue[0]) {
 
@@ -92,7 +93,8 @@ this.locate = function (absolue) {
     } else if (data === "NE") {
 
         border1 = [absolue[2], absolue[1]];
-        border2 = [absolue[0], absolue[3]];
+        border2 = [absolue[0], absolue[1]];
+        border3 = [absolue[0], absolue[3]];
     } else if (data === "E") {
 
         border1 = [absolue[2], absolue[1]];
@@ -100,7 +102,8 @@ this.locate = function (absolue) {
     } else if (data === "SE") {
 
         border1 = [absolue[2], absolue[3]];
-        border2 = [absolue[0], absolue[1]];
+        border2 = [absolue[2], absolue[1]];
+        border3 = [absolue[0], absolue[1]];
     } else if (data === "S") {
 
         border1 = [absolue[2], absolue[3]];
@@ -108,7 +111,8 @@ this.locate = function (absolue) {
     } else if (data === "SW") {
 
         border1 = [absolue[0], absolue[3]];
-        border2 = [absolue[2], absolue[1]];
+        border2 = [absolue[2], absolue[3]];
+        border3 = [absolue[2], absolue[1]];
     } else if (data === "W")  {
 
         border1 = [absolue[0], absolue[3]];
@@ -116,55 +120,35 @@ this.locate = function (absolue) {
     } else if (data === "NW")  {
 
         border1 = [absolue[0], absolue[1]];
-        border2 = [absolue[2], absolue[3]];
+        border2 = [absolue[0], absolue[3]];
+        border3 = [absolue[2], absolue[3]];
     } else {
 
         return [0, null]
     }
 
-    var direction = [this.direction(border1), this.direction(border2)];
-    var dist = this.distance(destination);
+    var direction = [this.direction(border1), this.direction(border2), this.direction(border3)];
+    var distance = this.distance(destination);
 
-    return [dist, direction];
+    return [distance, direction];
 };
 this.filter = function (distance, direction) {
 
-    var result = true;
-
     if (this.limit.distance !== null && distance > this.limit.distance)
-        result = false;
+        return false;
 
     if (this.limit.direction !== null && direction !== null) {
 
-        var limit = (this.limit.direction[0] < this.limit.direction[1]);
-        var area = (direction[0] < direction[1]);
-        var tmp1 = (direction[1] < this.limit.direction[0]);
-        var tmp2 = (direction[0] > this.limit.direction[1]);
-
-        if(limit) {
-
-            if (area && (tmp1 || tmp2)) {
-
-                result = false;
-            } else if (!area && (tmp1 && tmp2)) {
-
-                result = false;
-            }
-        } else {
-
-            if (!area && (!tmp1 && !tmp2)) {
-
-                result = false;
-            } else if (area && (tmp1 && tmp2)) {
-
-                result = false;
-            }
-        }
+        var result = ((this.limit.direction[0] > direction[0] > this.limit.direction[1]) || (this.limit.direction[0] > direction[1] > this.limit.direction[1]));
+        return result;
     }
 
-    return result;
+    return true;
 };
 this.decode = function (hash) {
+
+    if(hash === 'PD')
+        console.log("here");
 
     if (hash === this.referential.root)
         return [-90, -180, 90, 180];

@@ -139,7 +139,7 @@ this.next = function () {
 
         if(this.full && this.step > 0) {
 
-            sleep(50).then(() => {
+            sleep(100).then(() => {
                 this.more();
             });
         }
@@ -349,4 +349,6 @@ this.randomize = function (limit) {
 
         this.insert(action);
     }
+
+    console.log("OK")
 };
