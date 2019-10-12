@@ -151,14 +151,17 @@
                             }
                         });
 
-                        /*(new google.maps.InfoWindow({
-                            content: data.body.key,
-                            position: new google.maps.LatLng((data.body.index[0].bounds[0] + data.body.index[0].bounds[2]) / 2, (data.body.index[0].bounds[1] + data.body.index[0].bounds[3]) / 2),
-                            maxWidth: 100
-                        })).open(map);*/
+                        if(data.body.depth === 2 && 0)
+                            (new google.maps.InfoWindow({
+                                content: data.body.key,
+                                position: new google.maps.LatLng((data.body.index[0].bounds[0] + data.body.index[0].bounds[2]) / 2, (data.body.index[0].bounds[1] + data.body.index[0].bounds[3]) / 2),
+                                maxWidth: 100
+                            })).open(map);
                     }
 
                     if(data.type === 'indexed' && 0) {
+
+                        console.log(data.body);
 
                         new google.maps.Rectangle({
                             strokeColor: '#FF0000',
@@ -175,7 +178,7 @@
                             }
                         });
 
-                        if(data.body.depth === 2)
+                        if(data.body.depth === 2 && 0)
                             (new google.maps.InfoWindow({
                                 content: data.body.key,
                                 position: new google.maps.LatLng((data.body.index[0].bounds[0] + data.body.index[0].bounds[2]) / 2, (data.body.index[0].bounds[1] + data.body.index[0].bounds[3]) / 2),

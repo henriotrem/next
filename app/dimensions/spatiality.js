@@ -55,80 +55,105 @@ this.locate = function (absolue) {
 
     var data = "";
 
-    var destination = [];
-    var border1 = [];
-    var border2 = [];
-    var border3 = [];
+    var destination;
+    var border1;
+    var border2;
+
+    var direction;
+    var distance;
 
     if (this.origin[0] < absolue[0]) {
 
-        destination[0] = absolue[0];
         data += "N"
     } else if (this.origin[0] > absolue[2]) {
 
-        destination[0] = absolue[2];
         data += "S"
-    } else {
-
-        destination[0] = this.origin[0];
     }
 
     if (this.origin[1] < absolue[1]) {
 
-        destination[1] = absolue[1];
         data += "E"
     } else if (this.origin[1] > absolue[3]) {
 
-        destination[1] = absolue[3];
         data += "W"
-    } else {
-
-        destination[1] = this.origin[1];
     }
 
     if (data === "N") {
 
         border1 = [absolue[0], absolue[1]];
         border2 = [absolue[0], absolue[3]];
+
+        destination = [absolue[0], this.origin[1]];
+
+        distance = this.distance(destination);
+        direction = [this.direction(border1), this.direction(border2)];
     } else if (data === "NE") {
 
         border1 = [absolue[2], absolue[1]];
-        border2 = [absolue[0], absolue[1]];
-        border3 = [absolue[0], absolue[3]];
+        border2 = [absolue[0], absolue[3]];
+
+        destination = [absolue[0], absolue[1]];
+
+        distance = Math.min(this.distance(destination), this.distance(border1));
+        direction = [this.direction(border1), this.direction(border2)];
     } else if (data === "E") {
 
         border1 = [absolue[2], absolue[1]];
         border2 = [absolue[0], absolue[1]];
+
+        destination = [this.origin[0], absolue[1]];
+
+        distance = this.distance(destination);
+        direction = [this.direction(border1), this.direction(border2)];
     } else if (data === "SE") {
 
         border1 = [absolue[2], absolue[3]];
-        border2 = [absolue[2], absolue[1]];
-        border3 = [absolue[0], absolue[1]];
+        border2 = [absolue[0], absolue[1]];
+
+        destination = [absolue[2], absolue[1]];
+
+        distance = Math.min(this.distance(destination), this.distance(border2));
+        direction = [this.direction(border1), this.direction(border2)];
     } else if (data === "S") {
 
         border1 = [absolue[2], absolue[3]];
         border2 = [absolue[2], absolue[1]];
+
+        destination = [absolue[2], this.origin[1]];
+
+        distance = this.distance(destination);
+        direction = [this.direction(border1), this.direction(border2)];
     } else if (data === "SW") {
 
         border1 = [absolue[0], absolue[3]];
-        border2 = [absolue[2], absolue[3]];
-        border3 = [absolue[2], absolue[1]];
+        border2 = [absolue[2], absolue[1]];
+
+        destination = [absolue[2], absolue[3]];
+
+        distance = Math.min(this.distance(destination), this.distance(border1));
+        direction = [this.direction(border1), this.direction(border2)];
     } else if (data === "W")  {
 
         border1 = [absolue[0], absolue[3]];
         border2 = [absolue[2], absolue[3]];
+
+        destination = [this.origin[0], absolue[3]];
+
+        distance = this.distance(destination);
+        direction = [this.direction(border1), this.direction(border2)];
     } else if (data === "NW")  {
 
         border1 = [absolue[0], absolue[1]];
-        border2 = [absolue[0], absolue[3]];
-        border3 = [absolue[2], absolue[3]];
+        border2 = [absolue[2], absolue[3]];
+
+        destination = [absolue[0], absolue[3]];
+
+        distance = Math.min(this.distance(destination), this.distance(border2));
+        direction = [this.direction(border1), this.direction(border2)];
     } else {
 
         return [0, null]
     }
-
-    var direction = [this.direction(border1), this.direction(border2), this.direction(border3)];
-    var distance = this.distance(destination);
 
     return [distance, direction];
 };
@@ -139,15 +164,28 @@ this.filter = function (distance, direction) {
 
     if (this.limit.direction !== null && direction !== null) {
 
-        var result = ((this.limit.direction[0] > direction[0] > this.limit.direction[1]) || (this.limit.direction[0] > direction[1] > this.limit.direction[1]));
-        return result;
-    }
+        for(var i = 0; i < direction.length; i++) {
 
-    return true;
+            if(direction[i] >= this.limit.direction[0] && direction[i] <= this.limit.direction[1]) {
+
+                return true;
+            }
+        }
+
+        if(direction[0] <= this.limit.direction[0] && direction[1] >= this.limit.direction[1]) {
+
+            return true;
+        }
+
+        return false;
+    } else {
+
+        return true;
+    }
 };
 this.decode = function (hash) {
 
-    if(hash === 'PD')
+    if(hash === 'H')
         console.log("here");
 
     if (hash === this.referential.root)
