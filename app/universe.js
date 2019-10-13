@@ -1,5 +1,7 @@
 var constant = require("./constant");
 var uuid = require('uuid/v4');
+var distanceMax = 0;
+var iterations = 0;
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -17,6 +19,8 @@ this.init = function (redis, ws, dimensions, depth, precision, step, full) {
     this.full = full;
     this.level = 0;
     this.storage = new Map();
+    distanceMax = 0;
+    iterations = 0;
 
     this.layers = [];
 
@@ -75,7 +79,7 @@ this.index = function (data, depth) {
 
             if (selected) {
 
-                selected = dimension.filter(index.distance, index.direction);
+                selected = dimension.filter(index.distance, index.direction, depth);
             }
 
             dimension.referential.storage.set(key, index);
@@ -111,6 +115,8 @@ this.more = function () {
 };
 this.next = function () {
 
+    iterations++;
+
     if (this.level === 0) {
 
         if(this.layers[this.depth].loaded.count !== this.limit) {
@@ -119,6 +125,11 @@ this.next = function () {
             this.step--;
 
             this.more();
+
+            if(this.step === 0) {
+                console.log('Loaded : ' + this.layers[this.depth].loaded.count);
+                console.log('Iterations : ' + iterations);
+            }
         }
 
     } else if (this.layers[this.depth].loaded.count < this.limit) {
@@ -139,12 +150,9 @@ this.next = function () {
 
         if(this.full && this.step > 0) {
 
-            sleep(100).then(() => {
-                this.more();
-            });
-        }
+            this.more();
 
-        console.log('Loaded : ' + this.layers[this.depth].loaded.count);
+        }
     }
 };
 this.select = function () {
@@ -239,6 +247,11 @@ this.load = function () {
                 response.distance = Math.sqrt(this.element.distance);
 
                 layer.loaded.list.push(this.element);
+
+                if(response.distance < distanceMax)
+                    console.log('Failed distance : ' + (distanceMax - response.distance) + ' - ' + response.distance + ' - ' + element.key);
+
+                distanceMax = response.distance;
 
                 this.universe.ws.send(JSON.stringify({type: 'object', body: response}));
 
@@ -338,9 +351,9 @@ this.flush = function () {
 };
 this.randomize = function (limit) {
 
-    for(var i = 0; i < limit; i++) {
+    for(let i = 0; i < limit; i++) {
 
-        var action = {};
+        let action = {};
 
         action.latitude = (Math.random()-0.5)*180;
         action.longitude = (Math.random()-0.5)*360;

@@ -53,140 +53,108 @@ this.direction = function (destination) {
 };
 this.locate = function (absolue) {
 
-    var data = "";
-
-    var destination;
-    var border1;
-    var border2;
+    //point 1 : [absolue[0],absolue[1]]
+    //point 2 : [absolue[2],absolue[1]]
+    //point 3 : [absolue[2],absolue[3]]
+    //point 4 : [absolue[0],absolue[3]]
 
     var direction;
     var distance;
+    var data = 0;
 
-    if (this.origin[0] < absolue[0]) {
+    if (absolue[0] < this.origin[0] && this.origin[0] < absolue[2]) {
 
-        data += "N"
-    } else if (this.origin[0] > absolue[2]) {
-
-        data += "S"
+        data += 1;
     }
 
-    if (this.origin[1] < absolue[1]) {
+    if (absolue[1] < this.origin[1] && this.origin[1] < absolue[3]) {
 
-        data += "E"
-    } else if (this.origin[1] > absolue[3]) {
-
-        data += "W"
+        data += 2;
     }
 
-    if (data === "N") {
+    if(data === 3) {
 
-        border1 = [absolue[0], absolue[1]];
-        border2 = [absolue[0], absolue[3]];
-
-        destination = [absolue[0], this.origin[1]];
-
-        distance = this.distance(destination);
-        direction = [this.direction(border1), this.direction(border2)];
-    } else if (data === "NE") {
-
-        border1 = [absolue[2], absolue[1]];
-        border2 = [absolue[0], absolue[3]];
-
-        destination = [absolue[0], absolue[1]];
-
-        distance = Math.min(this.distance(destination), this.distance(border1));
-        direction = [this.direction(border1), this.direction(border2)];
-    } else if (data === "E") {
-
-        border1 = [absolue[2], absolue[1]];
-        border2 = [absolue[0], absolue[1]];
-
-        destination = [this.origin[0], absolue[1]];
-
-        distance = this.distance(destination);
-        direction = [this.direction(border1), this.direction(border2)];
-    } else if (data === "SE") {
-
-        border1 = [absolue[2], absolue[3]];
-        border2 = [absolue[0], absolue[1]];
-
-        destination = [absolue[2], absolue[1]];
-
-        distance = Math.min(this.distance(destination), this.distance(border2));
-        direction = [this.direction(border1), this.direction(border2)];
-    } else if (data === "S") {
-
-        border1 = [absolue[2], absolue[3]];
-        border2 = [absolue[2], absolue[1]];
-
-        destination = [absolue[2], this.origin[1]];
-
-        distance = this.distance(destination);
-        direction = [this.direction(border1), this.direction(border2)];
-    } else if (data === "SW") {
-
-        border1 = [absolue[0], absolue[3]];
-        border2 = [absolue[2], absolue[1]];
-
-        destination = [absolue[2], absolue[3]];
-
-        distance = Math.min(this.distance(destination), this.distance(border1));
-        direction = [this.direction(border1), this.direction(border2)];
-    } else if (data === "W")  {
-
-        border1 = [absolue[0], absolue[3]];
-        border2 = [absolue[2], absolue[3]];
-
-        destination = [this.origin[0], absolue[3]];
-
-        distance = this.distance(destination);
-        direction = [this.direction(border1), this.direction(border2)];
-    } else if (data === "NW")  {
-
-        border1 = [absolue[0], absolue[1]];
-        border2 = [absolue[2], absolue[3]];
-
-        destination = [absolue[0], absolue[3]];
-
-        distance = Math.min(this.distance(destination), this.distance(border2));
-        direction = [this.direction(border1), this.direction(border2)];
+        return [0, null];
     } else {
 
-        return [0, null]
+        if(data === 1) {
+
+            distance = Math.min(this.distance([absolue[0], absolue[1]]), this.distance([absolue[2], absolue[1]]), this.distance([absolue[2], absolue[3]]), this.distance([absolue[0], absolue[3]]), this.distance([this.origin[0], absolue[1]]), this.distance([this.origin[0], absolue[3]]));
+        } else if(data === 2) {
+
+            distance = Math.min(this.distance([absolue[0], absolue[1]]), this.distance([absolue[2], absolue[1]]), this.distance([absolue[2], absolue[3]]), this.distance([absolue[0], absolue[3]]), this.distance([absolue[0], this.origin[1]]), this.distance([absolue[2], this.origin[1]]));
+        } else {
+
+            distance = Math.min(this.distance([absolue[0], absolue[1]]), this.distance([absolue[2], absolue[1]]), this.distance([absolue[2], absolue[3]]), this.distance([absolue[0], absolue[3]]));
+        }
+
+        direction = [this.direction([absolue[0], absolue[1]]), this.direction([absolue[2], absolue[1]]), this.direction([absolue[2], absolue[3]]), this.direction([absolue[0], absolue[3]])];
     }
 
     return [distance, direction];
 };
-this.filter = function (distance, direction) {
+this.filter = function (distance, direction, depth) {
 
     if (this.limit.distance !== null && distance > this.limit.distance)
         return false;
 
     if (this.limit.direction !== null && direction !== null) {
 
-        for(var i = 0; i < direction.length; i++) {
+        if(depth < 2)
+            return true;
 
-            if(direction[i] >= this.limit.direction[0] && direction[i] <= this.limit.direction[1]) {
+        if(this.limit.direction[0] < this.limit.direction[1]) {
+
+            for(let i = 0; i < direction.length; i++) {
+
+                    if (direction[i] >= this.limit.direction[0] && direction[i] <= this.limit.direction[1]) {
+
+                        return true;
+                    }
+            }
+
+            let min = Math.min(...direction);
+            let max = Math.max(...direction);
+
+            if(max - min > 180) {
+
+                if(this.limit.direction[0] >= max) {
+
+                    return true;
+                }
+
+            } else if (min<= this.limit.direction[0] && max >= this.limit.direction[1]) {
 
                 return true;
             }
-        }
 
-        if(direction[0] <= this.limit.direction[0] && direction[1] >= this.limit.direction[1]) {
+        } else {
 
-            return true;
+            for(let i = 0; i < direction.length; i++) {
+
+                if (direction[i] >= this.limit.direction[0] || direction[i] <= this.limit.direction[1]) {
+
+                    return true
+                }
+            }
+
+            let min = Math.min(...direction);
+            let max = Math.max(...direction);
+
+            if(max - min > 180 && this.limit.direction[0] >= max) {
+
+                return true;
+
+            }
         }
 
         return false;
-    } else {
-
-        return true;
     }
+
+    return true;
+
 };
 this.decode = function (hash) {
-
-    if(hash === 'H')
-        console.log("here");
 
     if (hash === this.referential.root)
         return [-90, -180, 90, 180];
