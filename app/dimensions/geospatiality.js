@@ -1,3 +1,4 @@
+this.key = "geospatiality"
 this.pointDistance = function (origin, destination) {
     var lat1 = Math.PI * origin[0] / 180;
     var lat2 = Math.PI * destination[0] / 180;
@@ -26,7 +27,7 @@ this.indexLocation = function(origin, bounds) {
     return location;
 };
 this.indexDistance = function (origin, bounds) {
-    var location = indexLocation(origin, bounds);
+    var location = this.indexLocation(origin, bounds);
     if(location === 0){
         return Math.min(this.pointDistance(origin, [bounds[0], bounds[1]]), this.pointDistance(origin, [bounds[2], bounds[1]]), this.pointDistance(origin, [bounds[2], bounds[3]]), this.pointDistance(origin, [bounds[0], bounds[3]]));
     } else if(location === 1) {
@@ -38,7 +39,7 @@ this.indexDistance = function (origin, bounds) {
     }
 };
 this.indexDirection = function (origin, bounds) {
-    var location = indexLocation(origin, bounds);
+    var location = this.indexLocation(origin, bounds);
     if(location !== 3) {
         return [this.pointDirection(origin, [bounds[0], bounds[1]]), this.pointDirection(origin, [bounds[2], bounds[1]]), this.pointDirection(origin, [bounds[2], bounds[3]]), this.pointDirection(origin, [bounds[0], bounds[3]])];
     } else {
@@ -70,7 +71,7 @@ this.decode = function (base, hash) {
     var latMin = -90, latMax = 90, lonMin = -180, lonMax = 180;
     for (var i = 0; i < hash.length; i++) {
         var idx = base.alphabet.indexOf(hash[i]);
-        for (var n = base.index; n >= 0; n--) {
+        for (var n = base.bit-1; n >= 0; n--) {
             var bitN = idx >> n & 1;
             if (evenBit) {
                 var lonMid = (lonMin + lonMax) / 2;
