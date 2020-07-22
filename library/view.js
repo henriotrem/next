@@ -1,5 +1,4 @@
 this.dimensions = {};
-
 this.dimensions.geospatiality = require("./dimensions/geospatiality");
 this.dimensions.temporality = require("./dimensions/temporality");
 
@@ -83,7 +82,7 @@ this.create = function(key, count, universe) {
         index.distance = dimension.indexDistance(this.origin[dimension.key], index.bounds);
         index.direction = dimension.indexDirection(this.origin[dimension.key], index.bounds);
 
-        element.distance += Math.pow(index.distance, 2);
+        element.distance += Math.pow(index.distance/this.filter[dimension.key].ratio, 2);
         element.selected = element.selected && dimension.filterDirection(this.filter[dimension.key].direction, index.direction) && dimension.filterDistance(this.filter[dimension.key].distance,  index.distance);
 
         element.index.push(index);
@@ -199,6 +198,8 @@ this.object = function(element) {
     this.redis.hgetall([element.key.split(":")[0]], function(err, response) {
 
         response.distance = Math.sqrt(this.element.distance);
+        response.index = this.element.index;
+        response.temporality = new Date(parseInt(response.temporality)*1000);
 
         this.result.push(response);
         this.layer.loaded.count++;

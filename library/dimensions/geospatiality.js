@@ -1,4 +1,4 @@
-this.key = "geospatiality"
+this.key = "geospatiality";
 this.pointDistance = function (origin, destination) {
     var lat1 = Math.PI * origin[0] / 180;
     var lat2 = Math.PI * destination[0] / 180;
@@ -92,4 +92,73 @@ this.decode = function (base, hash) {
         }
     }
     return [latMin, lonMin, latMax, lonMax];
+};
+this.encode = function (base, precision, position) {
+
+    if (precision === 0)
+        return base.root;
+
+    var lat = position[0];
+    var lon = position[1];
+
+    var idx = 0;
+    var bit = 0;
+    var evenBit = true;
+    var geohash = "";
+
+    var latMin = -90, latMax = 90, lonMin = -180, lonMax = 180;
+
+    while (geohash.length < precision) {
+
+        if (evenBit) {
+
+            var lonMid = (lonMin + lonMax) / 2;
+
+            if (lon > lonMid) {
+                idx = idx * 2 + 1;
+                lonMin = lonMid;
+            } else {
+                idx = idx * 2;
+                lonMax = lonMid;
+            }
+        } else {
+
+            var latMid = (latMin + latMax) / 2;
+
+            if (lat > latMid) {
+                idx = idx * 2 + 1;
+                latMin = latMid;
+            } else {
+                idx = idx * 2;
+                latMax = latMid;
+            }
+        }
+
+        evenBit = !evenBit;
+
+        if (++bit === (base.bit)) {
+            geohash += base.alphabet[idx];
+            bit = 0;
+            idx = 0;
+        }
+    }
+
+    return geohash;
+};
+this.parent = function(base, hash) {
+
+    if(hash === base.root) {
+
+        return null;
+    } else if(hash.length === 1) {
+
+        return base.root;
+    } else {
+
+        return hash.slice(0, -1);
+    }
+};
+this.random = function() {
+
+    return [(Math.random()-0.5)*180, (Math.random()-0.5)*360];
 };
