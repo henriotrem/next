@@ -56,9 +56,9 @@ this.insert = function (object, universe) {
 };
 this.flush = function () {
 
-    this.redis.flushdb(function (err, succeeded) { console.log(succeeded); });
+    this.redis.flushdb();
 };
-this.randomize = function (name, number, universe, callback) {
+this.randomize = function (name, number, universe) {
 
     for(let i = 0; i < number; i++) {
 
@@ -73,6 +73,4 @@ this.randomize = function (name, number, universe, callback) {
 
         this.insert(object, universe);
     }
-
-    callback();
 };

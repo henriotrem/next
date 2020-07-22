@@ -9,10 +9,10 @@ redis.on("error", function (err) {
 
 ////////////////////////////////
 
-var universes = ["listen"];
+var universes = ["listen", "read", "watch"];
 
 var origin = {"geospatiality": [49.864716, 4.349014], "temporality": (Date.now()/1000)};
-var filter = {"geospatiality": { ratio: 20036, distance : 5000, direction : [60, 90]}, "temporality":{ ratio: 31556952, distance : 150*24*60*60, direction : 1 }};
+var filter = {"geospatiality": { ratio: 20036, distance : 0, direction : null}, "temporality":{ ratio: 31556952, distance : 0, direction : null }};
 
 var step = 10;
 var objects = [];

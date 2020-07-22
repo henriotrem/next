@@ -11,22 +11,21 @@ redis.on("error", function (err) {
 
 var universe = {};
 
-universe.key = "listen";
+universe.key = "watch";
 universe.dimensions = ["geospatiality", "temporality"];
 universe.bases = [{root:"#", bit:3, alphabet:"ABCDEFGHIJKLMNOP"}, {root:"#", bit:1, alphabet:"ABCD"}];
-universe.depth = 6;
+universe.depth = 8;
 universe.precision = 13;
 
-var name = "music";
+var name = "video";
 var number = 100000;
 
 ////////////////////////////////
 
 
 writer.init(redis);
-writer.flush();
+//writer.flush();
 writer.save(universe);
-writer.randomize(name, number, universe, function() {
+writer.randomize(name, number, universe);
 
-    redis.quit();
-});
+redis.quit();

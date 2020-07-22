@@ -73,7 +73,7 @@ this.create = function(key, count, universe) {
 
     for (var i = 1; i < array.length; i++) {
 
-        var dimension = this.dimensions[universe.dimensions[i-1].key];
+        var dimension = this.dimensions[universe.dimensions[i-1]];
         var index = {};
 
         index.key = array[i];
