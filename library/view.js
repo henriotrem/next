@@ -13,12 +13,13 @@ this.init = function (redis, universes, origin, filter, step, callback) {
     this.level = 0;
     this.callback = callback;
 
-    this.layer = this.new();
-    this.layers = [this.layer];
-    this.final = this.new();
+    this.layers = [this.new(), this.new()];
+    this.layer = this.layers[this.level];
     this.result = [];
 
     this.prepare(universes);
+
+    this.queries = 0;
 };
 this.new = function() {
 
@@ -54,7 +55,6 @@ this.prepare = function(universes) {
                 this.view.query();
 
         }.bind({view: this, universes: this.universes, name: name, layer: this.layer, size: size}));
-
     }
 };
 this.create = function(key, count, universe) {
@@ -63,7 +63,7 @@ this.create = function(key, count, universe) {
 
     element.key = key;
     element.universe = universe;
-    element.type = key.indexOf("index") !== -1 ? "index" : key.indexOf("set") !== -1 ? "set" : "object";
+    element.type = key.indexOf("index") !== -1 ? "index" : key.indexOf("list") !== -1 ? "list" : "object";
     element.count = count;
     element.index = [];
     element.distance = 0;
@@ -92,7 +92,9 @@ this.create = function(key, count, universe) {
 };
 this.more = function () {
 
-    this.level = this.layers.length;
+    this.queries = 0;
+
+    this.level = this.layers.length-1;
     this.limit += this.step;
     this.result = [];
 
@@ -100,7 +102,7 @@ this.more = function () {
 };
 this.next = function () {
 
-    this.layer = this.level < this.layers.length ? this.layers[this.level] : this.final;
+    this.layer = this.layers[this.level];
 
     if(this.level === 0) {
 
@@ -119,6 +121,7 @@ this.select = function () {
 
     let result = false;
     let selected = 0;
+    let limit = 9 * Object.keys(this.universes).length;
 
     this.layer.indexed.list.sort(this.sort);
 
@@ -127,8 +130,11 @@ this.select = function () {
 
     for (let element of this.layer.indexed.list) {
 
-        if(element.distance > this.layers[this.level - 1].radius)
+        if(element.distance >= this.layers[this.level - 1].radius)
             break;
+
+        if(this.layers.length === this.level + 1 && element.type !== 'object')
+            this.layers.push(this.new());
 
         this.layer.selected.count += element.count;
         this.layer.indexed.count -= element.count;
@@ -137,9 +143,10 @@ this.select = function () {
 
         if(this.layer.loaded.count + this.layer.selected.count - this.layer.waiting >= this.limit) {
             result = true;
-            break;
-        }
 
+            if(this.layers[this.layers.length-1].loaded.count !== 0 || selected > limit || (this.level+1) === this.layers.length)
+                break
+        }
     }
 
     this.layer.indexed.list.splice(0, selected);
@@ -152,9 +159,7 @@ this.select = function () {
 this.adjust = function () {
 
     if(this.layer.selected.list.length > 0) {
-        this.layer.radius = this.layer.selected.list[0].distance;
-    } else if(this.layer.indexed.list.length > 0) {
-        this.layer.radius = this.layer.indexed.list[0].distance;
+        this.layer.radius = this.layer.selected.list[this.layer.selected.list.length-1].distance;
     } else if(this.level > 0) {
         this.layer.radius = this.layers[this.level-1].radius;
     }
@@ -170,10 +175,9 @@ this.query = function () {
 };
 this.index = function(element) {
 
-    if(this.layers.length === this.level + 1)
-        this.layers.push(this.new());
-
     this.redis.zrevrangebyscore([element.key, '+inf', '-inf', 'WITHSCORES'], function (err, response) {
+
+        this.view.queries++;
 
         for (var j = 0; j < response.length / 2; j++)
             this.view.store(this.view.create(response[j * 2], parseInt(response[j * 2 + 1]), this.element.universe), this.storage);
@@ -182,39 +186,55 @@ this.index = function(element) {
 
     }.bind({view: this, layer: this.layer, storage: this.layers[this.level+1], element: element}));
 };
-this.set = function(element) {
+this.list = function(element) {
 
-    this.redis.smembers([element.key], function(err, response) {
+    this.redis.lrange([element.key, 0, -1], function(err, response) {
 
-        for (var j = 0; j < response.length; j++)
+        this.view.queries++;
+
+        for (var j = 0; j < response.length - 1; j++)
             this.view.store(this.view.create(response[j], 1, this.element.universe), this.storage);
 
         this.view.update(this.element);
 
-    }.bind({view: this, layer: this.layer, storage: this.final, element: element}));
+    }.bind({view: this, layer: this.layer, storage: this.layers[this.level+1], element: element}));
 };
 this.object = function(element) {
 
-    this.redis.hgetall([element.key.split(":")[0]], function(err, response) {
+    if(this.level + 1 === this.layers.length) {
 
-        response.distance = Math.sqrt(this.element.distance);
-        response.index = this.element.index;
-        response.temporality = new Date(parseInt(response.temporality)*1000);
+        this.redis.hgetall([element.key.split(":")[0]], function (err, response) {
 
-        this.result.push(response);
-        this.layer.loaded.count++;
+            response.distance = Math.sqrt(this.element.distance);
+            response.index = this.element.index;
+            response.temporality = new Date(parseInt(response.temporality) * 1000);
 
-        if(--this.layer.target === 0) {
+            this.result.push(response);
+            this.layer.loaded.count++;
 
-            this.layer.selected.list = [];
-            this.layer.selected.count = 0;
+            if (--this.layer.target === 0) {
 
-            this.result.sort(this.sort);
+                this.layer.selected.list = [];
+                this.layer.selected.count = 0;
 
-            this.callback(this.result);
-        }
+                this.result.sort(this.sort);
 
-    }.bind({layer: this.layer, callback: this.callback, sort:this.sort, result: this.result, element: element}));
+                this.callback(this.result);
+            }
+
+        }.bind({
+            context: this,
+            layer: this.layer,
+            callback: this.callback,
+            sort: this.sort,
+            result: this.result,
+            element: element
+        }));
+    } else {
+
+        this.store(element, this.layers[this.level+1]);
+        this.update(element);
+    }
 };
 this.store = function (element, storage) {
 

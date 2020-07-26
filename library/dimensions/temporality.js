@@ -93,5 +93,5 @@ this.parent = function(base, hash) {
 };
 this.random = function() {
 
-    return  ((1753007253 - 1437388053) * Math.random() + 1437388053);
+    return  ((1608626020 - 1577003620) * Math.random() + 1577003620);
 };

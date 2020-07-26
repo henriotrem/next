@@ -15,24 +15,27 @@ var origin = {"geospatiality": [49.864716, 4.349014], "temporality": (Date.now()
 var filter = {"geospatiality": { ratio: 20036, distance : 0, direction : null}, "temporality":{ ratio: 31556952, distance : 0, direction : null }};
 
 var step = 10;
-var objects = [];
+var total = 0;
 
 ////////////////////////////////
 
 view.init(redis, universes, origin , filter, step, function(result) {
 
-    objects = objects.concat(result);
+    total += result.length;
+
+    /*for(var object of result)
+        console.log(object.key);*/
 
     if(result.length === step) {
 
-        for(let object of result)
-            console.log(object);
+        console.log("Total : " + total + " / Queries : " + view.queries);
 
-        //view.more();
-        redis.quit();
+        if(total < 30000) {
+            view.more();
+        } else {
+            redis.quit();
+        }
     } else {
-
-        console.log("Number : " + objects.length);
 
         redis.quit();
     }
