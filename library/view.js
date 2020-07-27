@@ -20,6 +20,7 @@ this.init = function (redis, universes, origin, filter, step, callback) {
     this.prepare(universes);
 
     this.queries = 0;
+    this.unique = 0;
 };
 this.new = function() {
 
@@ -93,6 +94,7 @@ this.create = function(key, count, universe) {
 this.more = function () {
 
     this.queries = 0;
+    this.unique = 0;
 
     this.level = this.layers.length-1;
     this.limit += this.step;
@@ -177,7 +179,7 @@ this.index = function(element) {
 
     this.redis.zrevrangebyscore([element.key, '+inf', '-inf', 'WITHSCORES'], function (err, response) {
 
-        this.view.queries++;
+        this.view.unique+= JSON.stringify(response).length;
 
         for (var j = 0; j < response.length / 2; j++)
             this.view.store(this.view.create(response[j * 2], parseInt(response[j * 2 + 1]), this.element.universe), this.storage);
@@ -190,7 +192,7 @@ this.list = function(element) {
 
     this.redis.lrange([element.key, 0, -1], function(err, response) {
 
-        this.view.queries++;
+        this.view.unique+= JSON.stringify(response).length;
 
         for (var j = 0; j < response.length - 1; j++)
             this.view.store(this.view.create(response[j], 1, this.element.universe), this.storage);
@@ -250,6 +252,7 @@ this.update = function(element) {
 
     if (--this.layer.target === 0) {
 
+        this.queries++;
         this.layer.selected.list = [];
         this.layer.selected.count = 0;
         this.level++;

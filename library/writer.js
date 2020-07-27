@@ -54,30 +54,6 @@ this.name = function(object, universe) {
 
     return hash;
 };
-this.add = function (hash, value, universe, root) {
-
-    hash = this.parent(hash, universe);
-
-    if(hash === root)
-        return;
-
-    let key = universe.key  + "|list:" + hash;
-
-    this.redis.lpushx(key, value, function(err, res){
-
-        if(res === 0) {
-
-            this.context.add(this.hash, this.value, this.universe, this.root);
-        } else {
-
-            this.context.index(this.key, this.hash, this.universe, this.root);
-
-            if(res === this.universe.limit)
-                this.context.transfer(this.hash, this.universe);
-
-        }
-    }.bind({context: this, key:key, value:value, hash:hash, universe:universe, root: root}));
-};
 this.parent = function(hashes, universe) {
 
     let parent = "";
@@ -95,6 +71,35 @@ this.parent = function(hashes, universe) {
 
     return parent;
 };
+this.add = function (hash, value, universe, root) {
+
+    hash = this.parent(hash, universe);
+
+    let key = universe.key  + "|list:" + hash;
+    let bind = {context: this, key: key, value: value, hash: hash, universe: universe, root: root};
+
+    if(this.parent(hash, universe) === root) {
+
+        this.redis.lpush(bind.key, bind.value, this.push.bind(bind));
+    } else {
+
+        this.redis.lpushx(bind.key, bind.value, this.push.bind(bind));
+    }
+};
+this.push = function (err, res) {
+
+    if (res === 0) {
+
+        this.context.add(this.hash, this.value, this.universe, this.root);
+    } else {
+
+        this.context.index(this.key, this.hash, this.universe, this.root);
+
+        if (res === this.universe.limit)
+            this.context.transfer(this.hash, this.universe);
+
+    }
+};
 this.index = function(value, hash, universe, root) {
 
     hash = this.parent(hash, universe);
@@ -106,13 +111,6 @@ this.index = function(value, hash, universe, root) {
     if(hash !== root)
         this.index(key, hash, universe, root);
 
-};
-this.erase = function(hash, universe) {
-
-    let key = universe.key  + "|index:" + this.parent(hash, universe);
-    let value = universe.key  + "|list:" + hash;
-
-    this.redis.zrem(key, value);
 };
 this.transfer = function(hash, universe) {
 
@@ -131,13 +129,13 @@ this.combinations = function(hash, key, arr, i, universe) {
         let tmp = key + ":" + arr[i] + char1;
 
         if ((i + 1) === arr.length) {
-            this.push(tmp, hash, universe);
+            this.generate(tmp, hash, universe);
         } else {
             this.combinations(hash, tmp, arr, i+1, universe);
         }
     }
 };
-this.push = function(key, hash, universe){
+this.generate = function(key, hash, universe){
 
     this.redis.lpush(key, 1, function(err, res) {
 
@@ -148,6 +146,13 @@ this.push = function(key, hash, universe){
         }
 
     }.bind({context: this, hash: hash, key: key, universe: universe}));
+};
+this.erase = function(hash, universe) {
+
+    let key = universe.key  + "|index:" + this.parent(hash, universe);
+    let value = universe.key  + "|list:" + hash;
+
+    this.redis.zrem(key, value);
 };
 this.complete = function(hash, universe) {
 

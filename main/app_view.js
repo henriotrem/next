@@ -9,10 +9,10 @@ redis.on("error", function (err) {
 
 ////////////////////////////////
 
-var universes = ["listen", "read", "watch"];
+var universes = ["listen"];
 
 var origin = {"geospatiality": [49.864716, 4.349014], "temporality": (Date.now()/1000)};
-var filter = {"geospatiality": { ratio: 20036, distance : 0, direction : null}, "temporality":{ ratio: 31556952, distance : 0, direction : null }};
+var filter = {"geospatiality": { ratio: 20036, distance : 10000, direction : [60, 90]}, "temporality":{ ratio: 31556952, distance : 3600*24*30, direction : 1 }};
 
 var step = 10;
 var total = 0;
@@ -21,18 +21,18 @@ var total = 0;
 
 view.init(redis, universes, origin , filter, step, function(result) {
 
-    total += result.length;
+    for(var object of result)
+        console.log(object.key);
 
-    /*for(var object of result)
-        console.log(object.key);*/
+    console.log("\nTotal : " + (total += result.length) + " | Queries : " + view.queries + " | Response ~" + Math.floor(view.unique/view.queries) + " bytes\n");
 
     if(result.length === step) {
 
-        console.log("Total : " + total + " / Queries : " + view.queries);
+        if(total < step*20) {
 
-        if(total < 30000) {
             view.more();
         } else {
+
             redis.quit();
         }
     } else {

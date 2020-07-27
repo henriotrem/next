@@ -3,6 +3,12 @@ var writer = require("../library/writer");
 const Redis = require("redis");
 const redis = Redis.createClient({port: 6379,host: '127.0.0.1'});
 
+const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@$";
+const BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef";
+const BASE16 = "ABCDEFGHIJKLMNOP";
+const BASE8 = "ABCDEFGH";
+const BASE4 = "ABCD";
+
 redis.on("error", function (err) {
     console.log("Error " + err);
 });
@@ -11,28 +17,18 @@ redis.on("error", function (err) {
 
 var universe = {};
 
-universe.key = "watch";
+universe.key = "listen";
 universe.dimensions = ["geospatiality", "temporality"];
-universe.bases = [{root:"#", bit:4, alphabet:"ABCDEFGHIJKLMNOP"}, {root:"#", bit:2, alphabet:"ABCD"}];
-universe.depth = 2;
+universe.bases = [{root:"#", bit:4, alphabet:BASE16}, {root:"#", bit:2, alphabet:BASE4}];
 universe.precision = 13;
 universe.limit = 100;
 
-var name = "video";
+var name = "music";
 var number = 100000;
 
 ////////////////////////////////
 
 writer.init(redis);
+writer.flush();
 writer.save(universe);
-
-for(var char1 of universe.bases[0].alphabet) {
-    for (var char2 of universe.bases[1].alphabet) {
-        for (var i = 3; i < 7; i++) {
-            let key = universe.key + "|list:" + char1 + ":" + i + "_" + char2;
-            redis.lpush(key, 1);
-        }
-    }
-}
-
 writer.randomize(name, number, universe);

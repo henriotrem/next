@@ -5,7 +5,7 @@ redis.on("error", function (err) {
     console.log("Error " + err);
 });
 
-redis.zrevrangebyscore(['read|index:#:#', '+inf', '-inf', 'WITHSCORES'], function (err, response) {
+redis.zrevrangebyscore(['listen|index:#:#', '+inf', '-inf', 'WITHSCORES'], function (err, response) {
 
     let sum = 0;
 
