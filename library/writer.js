@@ -149,6 +149,8 @@ this.generate = function(key, hash, universe){
 };
 this.erase = function(hash, universe) {
 
+    delete this.target[this.hash];
+
     let key = universe.key  + "|index:" + this.parent(hash, universe);
     let value = universe.key  + "|list:" + hash;
 
