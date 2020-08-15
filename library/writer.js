@@ -2,7 +2,7 @@ this.dimensions = {};
 this.dimensions.geospatiality = require("./dimensions/geospatiality");
 this.dimensions.temporality = require("./dimensions/temporality");
 
-var uuid = require('uuid/v4');
+const { v4: uuid } = require('uuid');
 
 this.init = function (redis) {
 
