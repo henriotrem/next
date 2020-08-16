@@ -26,7 +26,7 @@ view.init(redis, universes, origin , filter, step, function(result) {
 
     console.log("\nTotal : " + (total += result.length) + " | Queries : " + view.queries + " | Response ~" + Math.floor(view.unique/view.queries) + " bytes\n");
 
-    if(result.length === step) {
+    if(result.length >= step) {
 
         if(total < step*20) {
 
